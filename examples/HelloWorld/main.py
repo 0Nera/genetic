@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-import random, time, json
+import random
+import time
+import json
 
 # Количество существ в поколении
 bots = 3
@@ -76,6 +78,26 @@ def check_gen_valid(data):
     if data[5][1] == 2:
         result += 1
     
+    return result
+
+
+# Проверка работы гена
+def check_work_valid(gen):
+    result = check_gen_valid(gen)
+
+    if result > 4:
+        try:
+            with open('Hi.py', "w+") as f:
+                f.write(codegen(gen))
+
+            os.system("python3 Hi.py>result.txt")
+            
+            with open('result.txt', "r") as f:
+                if need == f.read():
+                    return 200
+        except Exception as E:
+            return result
+
     return result
 
 
@@ -163,7 +185,8 @@ if __name__ == '__main__':
         best_unit_genetic = unit_list[best_unit]
         
         if generation_max == 6:
-            print(f"Конец на генерации: {generation}, окончено на {time.time() - start_time}")
+            print(f"Конец на генерации: {generation}")
+            print(f"Время: {time.time() - start_time}")
             print(f"Лучший бот: unit{best_unit + 1}")
             print("Генофонд:")
             for i in range(0, len(unit_list)):
@@ -192,4 +215,4 @@ if __name__ == '__main__':
             }
         )
     with open('generation.json', 'w+') as f:
-        f.write(json.dumps(generation_history, indent = 4, sort_keys = True))
+        f.write(json.dumps(generation_history, indent = 4, sort_keys = True)) 
