@@ -204,20 +204,18 @@ if __name__ == '__main__':
             for i in range(len(unit_list)):
                 unit_list[i] = mutation(best_unit_genetic)
 
-        if len(generation_history) > 1000:
-            generation_history.pop()
         # Сохраняем текущую генерацию
-        """generation_history.append(
+        generation_history.append(
             {
                 'generation': generation,
                 'generation_max': generation_max,
                 'unit_list': unit_list
             }
-        )"""
+        )
 
     # Сохраняем последнюю генерацию и историю генераций
     with open('generation.json', 'w+') as f:
         f.write(json.dumps(unit_list, indent = 4, sort_keys = True))
-
-    #with open('generation_history.json', 'w+') as f:
-    #    f.write(json.dumps(generation_history, indent = 4, sort_keys = True))
+        
+    with open('generation_history.json', 'w+') as f:
+        f.write(json.dumps(generation_history, indent = 4, sort_keys = True))
