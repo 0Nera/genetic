@@ -7,7 +7,7 @@ import json
 bots = 3
 
 
-# Действия, ответ 0 1 3 4 3 2
+# Действия
 actions = [
     "print", 
     "(",
@@ -15,6 +15,9 @@ actions = [
     "\"",
     "Hello World!",
 ]
+
+# Ответ
+need = [0, 1, 3, 4, 3, 2]
 
 # Мы должны иметь точный максимум действий, чтобы не ошибиться
 actions_max = len(actions) - 1
@@ -64,20 +67,26 @@ def exec_gen(gen):
 # Проверка гена
 def check_gen_valid(data):
     result = 0
+    ptr = 0
+    rec = 0
+    work = True
+    valid = []
 
-    if data[0][1] == 0:
-        result += 1
-    if data[1][1] == 1:
-        result += 1
-    if data[2][1] == 3:
-        result += 1
-    if data[3][1] == 4:
-        result += 1
-    if data[4][1] == 3:
-        result += 1
-    if data[5][1] == 2:
-        result += 1
+    while work:
+        if data[ptr][1] == need[ptr]:
+            valid.append(data[ptr][1])
+        
+        work = data[ptr][0] != -1
+        ptr = data[ptr][0]
+        rec += 1
+
+        if rec > len(need) - 1:
+            break
     
+    for i in range(0, len(valid)):
+        if valid[i] == need[i]:
+            result += 1
+
     return result
 
 
@@ -105,7 +114,7 @@ def check_work_valid(gen):
 def mutation(gen):
     new_gen = []
     for i in gen:
-        if random.randint(0, 3) == 1:
+        if random.randint(0, 2) == 1:
             new_gen.append(
                 [
                     i[0], random.randint(0, actions_max)
@@ -120,11 +129,16 @@ def mutation(gen):
 def codegen(gen):
     ptr = 0
     result = ""
+    rec = 0
 
     while(gen[ptr][0] != -1):
         action = gen[ptr][1]
         result += actions[action]
         ptr = gen[ptr][0]
+        
+        rec += 1
+        if rec > len(need) - 1:
+            break
 
     action = gen[ptr][1]
     result += actions[action]
@@ -132,27 +146,33 @@ def codegen(gen):
     return result
 
 
-# Входная точка
+# Вывод информации о генах
+def dump_gen(gen, num):
+    print(f"Unit {num + 1}")
+    print(f"Соответствие {check_gen_valid(gen)}")
+    print(f"Генетический код: {gen}")
+    print(f"Кодогенерация: {codegen(gen)}")
+
+
 if __name__ == '__main__':
     start_time = time.time()
     generation_history = []
+    unit_list = []
 
-    # 5 ботов с нулевыми(эталонными) генами
-    unit1 = mutation(start_gen)
-    unit2 = mutation(start_gen)
-    unit3 = mutation(start_gen)
-    unit4 = mutation(start_gen)
-    unit5 = mutation(start_gen)
+    # 5 ботов с случайными генами
+    for i in range(5):
+        unit_list.append(mutation(start_gen))
 
     # Количество пройденных генераций
     generation = 0
+
     # Максимум за текущую генерацию
     generation_max = 0
+
     # Лучший бот
     best_unit = 0
+    best_unit_genetic = start_gen
 
-    # Требуемый результат
-    need = "Hello World!"
     # Работает ли цикл
     work = True
 
@@ -161,58 +181,43 @@ if __name__ == '__main__':
         generation_max = 0
         best_unit = random.randint(0, 4)
 
-        if check_gen_valid(unit1) > generation_max:
-            generation_max = check_gen_valid(unit1)
-            best_unit = 0
-
-        if check_gen_valid(unit2) > generation_max:
-            generation_max = check_gen_valid(unit2)
-            best_unit = 1
-
-        if check_gen_valid(unit3) > generation_max:
-            generation_max = check_gen_valid(unit3)
-            best_unit = 2
-
-        if check_gen_valid(unit4) > generation_max:
-            generation_max = check_gen_valid(unit4)
-            best_unit = 3
-
-        if check_gen_valid(unit5) > generation_max:
-            generation_max = check_gen_valid(unit5)
-            best_unit = 4
-
-        unit_list = [unit1, unit2, unit3, unit4, unit5]
-        best_unit_genetic = unit_list[best_unit]
         
+
+        # Выбираем лучшего из всех
+        for i in range(len(unit_list)):
+            if check_gen_valid(unit_list[i]) > generation_max:
+                generation_max = check_gen_valid(unit_list[i])
+                best_unit = i
+                best_unit_genetic = unit_list[best_unit]
+        
+        # Если цель достигнута, выводим информацию о генофонде
         if generation_max == 6:
             print(f"Конец на генерации: {generation}")
             print(f"Время: {time.time() - start_time}")
             print(f"Лучший бот: unit{best_unit + 1}")
             print("Генофонд:")
             for i in range(0, len(unit_list)):
-                print(
-                    f"""\tunit{i+1}, соответствие {check_gen_valid(unit_list[i])}, гены: 
-    {unit_list[i]}
-Код: {codegen(unit_list[i])}
-*****"""
-                    )
+                dump_gen(unit_list[i], i)
+
             work = False
         else:
-            unit1 = mutation(best_unit_genetic)
-            unit2 = mutation(best_unit_genetic)
-            unit3 = mutation(best_unit_genetic)
-            unit4 = mutation(best_unit_genetic)
-            unit5 = mutation(best_unit_genetic)
-        generation_history.append(
+            for i in range(len(unit_list)):
+                unit_list[i] = mutation(best_unit_genetic)
+
+        if len(generation_history) > 1000:
+            generation_history.pop()
+        # Сохраняем текущую генерацию
+        """generation_history.append(
             {
                 'generation': generation,
                 'generation_max': generation_max,
-                'unit1': unit1,
-                'unit2': unit2,
-                'unit3': unit3,
-                'unit4': unit4,
-                'unit5': unit5
+                'unit_list': unit_list
             }
-        )
+        )"""
+
+    # Сохраняем последнюю генерацию и историю генераций
     with open('generation.json', 'w+') as f:
-        f.write(json.dumps(generation_history, indent = 4, sort_keys = True)) 
+        f.write(json.dumps(unit_list, indent = 4, sort_keys = True))
+
+    #with open('generation_history.json', 'w+') as f:
+    #    f.write(json.dumps(generation_history, indent = 4, sort_keys = True))
